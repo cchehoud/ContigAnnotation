@@ -27,5 +27,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print "Extracting information from contig file:"
-    extract_ORF_counts(args.contigFile)
+    contigs2ORFcount = extract_ORF_counts(args.contigFile)
 
+    print "ContigName\tNumberofORFS"
+    for contig, nORFs in contigs2ORFcount.items():
+        print contig + "\t" + str(nORFs)
