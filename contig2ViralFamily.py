@@ -3,6 +3,7 @@
 import argparse
 
 def extract_family_name (filein):
+    filein.seek(0)
     contigs2familyName = {}
     for line in filein:
         values = line.split("\t")

@@ -4,6 +4,7 @@ import argparse
 import sys
 
 def extract_name_length_readcount (filein):
+    filein.seek(0)
     contigs2length = {}
     contigs2readcount = {}
     for line in filein:
