@@ -81,9 +81,9 @@ if __name__ == '__main__':
         ORF_file = basename + ".fastp"
         ORF_file_fh = open(ORF_file, 'r')
         viral_Blast_file = basename + "_viral_blastout.txt"
-        viral_Blast_fh = open(viral_Blast_file, 'r')
         print "Running BLAST on viral db:"
         run_blast_viraldb(ORF_file, viral_Blast_file, args.ref_viral)
+        viral_Blast_fh = open(viral_Blast_file, 'r')
         
         table = extract_annotations(args.contigFile, circle_file, ORF_file_fh, viral_Blast_fh)
 
