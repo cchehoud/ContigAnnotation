@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import sys
 import argparse
 import subprocess
 import os
@@ -17,10 +18,10 @@ def run_glimmer(contig_file):
 def run_blast_viraldb(ORF_file, viral_Blast_file, ref_viralDB):
     subprocess.check_call(["bash", "blast.viral.families.sh", ORF_file, viral_Blast_file, ref_viralDB])
 
-def extract_annotations(contig_file_fh, circle_file_name, orf_file_name, blast_file_fh):
+def extract_annotations(contig_file_fh, circle_file_name, orf_file_fh, blast_file_fh):
     (c2length, c2readcount) = contigs2length.extract_name_length_readcount(contig_file_fh)
     c_circular = contigs2circular.extract_circularity(circle_file_name)
-    c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_name)
+    c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_fh)
     c2viralORFs = contig2ViralORFs.extract_ORF_counts(blast_file_fh)
     c2familyName = contig2ViralFamily.extract_family_name(blast_file_fh)
     return (annotation_table(c2length, c2readcount, c_circular,c2ORFs,c2viralORFs, c2familyName))
@@ -58,7 +59,9 @@ if __name__ == '__main__':
                             help='Required input: contig file in fasta format.')
         parser.add_argument('-r', '--ref_viral_protein_DB', dest='ref_viral', required=True,
                             type=str,
-                            help='Required input: location of db of viral family proteins.') 
+                            help='Required input: location of db of viral family proteins.')
+        parser.add_argument('-o', '--output_contig_annotation_table', dest='outputFile', required=False,
+                            type=str, help='Optional output file name.') 
         
         args = parser.parse_args()
 
@@ -81,9 +84,14 @@ if __name__ == '__main__':
         viral_Blast_fh = open(viral_Blast_file, 'r')
         print "Running BLAST on viral db:"
         run_blast_viraldb(ORF_file, viral_Blast_file, args.ref_viral)
-
+        
         table = extract_annotations(args.contigFile, circle_file, ORF_file_fh, viral_Blast_fh)
-        for line in table:
-            print '\t'.join(map(str, line))
 
-        print "Done"
+        if (args.outputFile): 
+            output = open(args.outputFile, 'w')
+        else:
+            output = sys.stdout
+            
+        for line in table:
+            output.write('\t'.join(map(str, line)))
+            output.write('\n')
