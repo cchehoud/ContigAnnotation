@@ -2,10 +2,10 @@
 
 import argparse
 
-def extract_circularity (filein):
+def extract_circularity (file_fh):
     circularcontigs = []
     
-    for line in filein:
+    for line in file_fh:
         line = line.rstrip('\n')
         if line.startswith(">"):
             values = line.split(" ")
