@@ -78,13 +78,13 @@ if __name__ == '__main__':
         circle_fh = open(circle_file, 'r')
         
         print "Running Glimmer:" 
-#        run_glimmer(args.contigFile)
+        run_glimmer(args.contigFile)
 
         ORF_file = basename + ".fastp"
         ORF_file_fh = open(ORF_file, 'r')
         viral_Blast_file = basename + "_viral_blastout.txt"
         print "Running BLAST on viral db:"
-#        run_blast_viraldb(ORF_file, viral_Blast_file, args.ref_viral)
+        run_blast_viraldb(ORF_file, viral_Blast_file, args.ref_viral)
         viral_Blast_fh = open(viral_Blast_file, 'r')
         
         table = extract_annotations(args.contigFile, circle_fh, ORF_file_fh, viral_Blast_fh)
