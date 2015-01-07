@@ -2,7 +2,7 @@
 
 import argparse
 
-def extract_counts (filein):
+def extract_match (filein):
     filein.seek(0)
     contigs2match = {}
     for line in filein:
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print "Extracting information from BLAST file:"
-    contigs2count = extract_counts(args.blastFile)
+    contigs2count = extract_match(args.blastFile)
 
     print "ContigName\tTopMatch"
     for contig, match in contigs2count.items():
