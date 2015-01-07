@@ -7,17 +7,14 @@ def extract_counts (filein):
     contigs2count = {}
     contig_orfnames = set()
     for line in filein:
-        if not line.startswith( "#" ):
-            values = line.split("\t")
-            contig_orf = values[0]
-            if not (contig_orf in contig_orfnames):
-                contig_orfnames.add(contig_orf)
-                contig_name = values[0].split(".")[0]
-                integrase = values[0].split(".")[1]
-                if contig_name in contigs2count:
-                    contigs2count[contig_name] += 1
-                else:
-                    contigs2count[contig_name] = 1
+        contig_orf = line.rstrip()
+        if not (contig_orf in contig_orfnames):
+            contig_orfnames.add(contig_orf)
+            contig_name = contig_orf.split(".")[0]
+            if contig_name in contigs2count:
+                contigs2count[contig_name] += 1
+            else:
+                contigs2count[contig_name] = 1
     return(contigs2count)
             
 if __name__ == '__main__':
