@@ -18,7 +18,7 @@ def run_glimmer(contig_file):
  
 def run_blast_viraldb(basename, ORF_file, ref_viralDB):
     viralp_Blast_file = basename + "_viralp_blastout.txt"
-    print "Running BLAST on viral db:"
+    print "Running BLAST on viral proteins db:"
     subprocess.check_call(["bash", "blast.viral.families.sh", ORF_file, viralp_Blast_file, ref_viralDB])
     return(open(viralp_Blast_file, 'r'))
     
@@ -49,11 +49,14 @@ def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blas
 
     nucleotideDBmatches = {}
     for nucleotideDB_name, fh in nucleotide2fh.items():
-        nucleotideDBmatches[nucleotideDB_name] = contigs2topMatch.extract_counts(fh)
+        nucleotideDBmatches[nucleotideDB_name] = contigs2topMatch.extract_match(fh)
     return (annotation_table(c2length, c2readcount, c_circular, c2ORFs, c2viralORFs, c2familyName, proteinDBmatches, nucleotideDBmatches)) 
 
 def annotation_table(c2length, c2readcount, c_circular, c2ORFs, c2viralORFs, c2familyName, proteinDBmatches, nucleotideDBmatches): 
     table = []
+    header = ["contig_name", "length", "read_count", "circular", "nORFs", "nViralORFs", "family"]
+    header += proteinDBmatches.keys() + nucleotideDBmatches.keys()
+    table.append(header)
     for contig, length in c2length.items():
         readcount = c2readcount[contig]
         if contig in c_circular:
@@ -72,12 +75,24 @@ def annotation_table(c2length, c2readcount, c_circular, c2ORFs, c2viralORFs, c2f
             Family = c2familyName[contig]
         else:
             Family = "NA"
-#       for name, counts in proteinDBmatches():
-#           if contig in counts:
-        
-        table.append([contig, length, readcount, circular, nORFs, nViralORFs, Family])
+        protien_list = extract_blast_hits(contig, proteinDBmatches, 0)
+        nuc_list = extract_blast_hits(contig, nucleotideDBmatches, "NA") 
+        row = [contig, length, readcount, circular, nORFs, nViralORFs, Family]
+        row += protien_list + nuc_list
+        table.append(row)
     return(table)
 
+def extract_blast_hits(contig_name, db_map, default_value):
+    contig_value =[]
+    # value here can be string (eg top match for contig) or integer (eg number of matches)
+    for name_DB, contig_name2value in db_map.items(): 
+        if contig_name in contig_name2value:
+            match = contig_name2value[contig_name]
+        else:
+            match = default_value
+        contig_value.append(match)
+    return(contig_value)
+        
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Contig Annotation.')
     parser.add_argument('-i', '--input', dest='contigFile', required=True, type=file,
