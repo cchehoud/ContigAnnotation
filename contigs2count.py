@@ -7,7 +7,8 @@ def extract_counts (filein):
     contigs2count = {}
     contig_orfnames = set()
     for line in filein:
-        contig_orf = line.rstrip()
+        line = line.rstrip()
+        contig_orf = line.split("\t")[0]
         if not (contig_orf in contig_orfnames):
             contig_orfnames.add(contig_orf)
             contig_name = contig_orf.split(".")[0]
