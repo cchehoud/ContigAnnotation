@@ -25,19 +25,20 @@ def run_blast_viraldb(basename, ORF_file, ref_viralDB):
 def run_blastp_against_db(basename, name, ORF_file, path):
     output_Blast_file = basename + "_" + name + "_blastout.txt"
     print "Running BLAST on " + name + " db:"
-    command = "blastp -query " + ORF_file + " -db " + path + " -outfmt '6 qseqid' -evalue 1e-10 -max_target_seqs 1 -out " + output_Blast_file
+    command = "blastp -query " + ORF_file + " -db " + path + " -outfmt '6 qseqid' -evalue 1e-10 -num_threads 4 -max_target_seqs 1 -out " + output_Blast_file
     subprocess.check_call(command, shell=True)
     return(open(output_Blast_file, 'r'))
     
 def run_blastn_against_db(basename, name, contig_file, path):
     output_Blast_file = basename + "_" + name + "_blastout.txt"
     print "Running BLAST on " + name + " db:"
-    command = "blastn -query " + contig_file + " -db " + path + " -outfmt '6 qseqid stitle' -evalue 1e-10 -max_target_seqs 1 -out " + output_Blast_file
+    command = "blastn -query " + contig_file + " -db " + path + " -outfmt '6 qseqid stitle' -num_threads 4 -evalue 1e-10 -max_target_seqs 1 -out " + output_Blast_file
     subprocess.check_call(command, shell=True)
     return(open(output_Blast_file, 'r'))
          
 def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh): 
-    (c2length, c2readcount) = contigs2length.extract_name_length_readcount(contig_file_fh)
+#    (c2length, c2readcount) = contigs2length.extract_name_length_readcount(contig_file_fh)
+    c2length=contigs2length.extract_name_length(contig_file_fh)
     c_circular = contigs2circular.extract_circularity(circle_file_fh)
     c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_fh)
     c2viralORFs = contigs2count.extract_counts(viralp_Blast_fh)
@@ -50,15 +51,14 @@ def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blas
     nucleotideDBmatches = {}
     for nucleotideDB_name, fh in nucleotide2fh.items():
         nucleotideDBmatches[nucleotideDB_name] = contigs2topMatch.extract_match(fh)
-    return (annotation_table(c2length, c2readcount, c_circular, c2ORFs, c2viralORFs, c2familyName, proteinDBmatches, nucleotideDBmatches)) 
+    return (annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, proteinDBmatches, nucleotideDBmatches)) 
 
-def annotation_table(c2length, c2readcount, c_circular, c2ORFs, c2viralORFs, c2familyName, proteinDBmatches, nucleotideDBmatches): 
+def annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, proteinDBmatches, nucleotideDBmatches): 
     table = []
-    header = ["contig_name", "length", "read_count", "circular", "nORFs", "nViralORFs", "family"]
+    header = ["contig_name", "length", "circular", "nORFs", "nViralORFs", "family"]
     header += proteinDBmatches.keys() + nucleotideDBmatches.keys()
     table.append(header)
     for contig, length in c2length.items():
-        readcount = c2readcount[contig]
         if contig in c_circular:
             circular = "Yes"
         else:
@@ -77,7 +77,7 @@ def annotation_table(c2length, c2readcount, c_circular, c2ORFs, c2viralORFs, c2f
             Family = "NA"
         protien_list = extract_blast_hits(contig, proteinDBmatches, 0)
         nuc_list = extract_blast_hits(contig, nucleotideDBmatches, "NA") 
-        row = [contig, length, readcount, circular, nORFs, nViralORFs, Family]
+        row = [contig, length, circular, nORFs, nViralORFs, Family]
         row += protien_list + nuc_list
         table.append(row)
     return(table)
@@ -131,7 +131,7 @@ def parse_db_paths(db_list):
                     
 if __name__ == '__main__':
         '''
-        This program will take a FASTA file of contigs in nucleotide form and output a table contianining circulairty and ORF information. The format of the table is as follows: contigName, length, readCount, circular, numOfORFS, numOfORFSMatchingViralFamily, bestViralFamilyClassification, numOFIntegrase, numOfACLAMEPhageParts, numOfVFDB.
+        This program will take a FASTA file of contigs in nucleotide form and output a table contianining circulairty and ORF information. The format of the table is as follows: contigName, length, circular, numOfORFS, numOfORFSMatchingViralFamily, bestViralFamilyClassification, numOFIntegrase, numOfACLAMEPhageParts, numOfVFDB.
         '''
 
         args = parse_arguments()
