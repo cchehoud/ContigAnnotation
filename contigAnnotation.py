@@ -11,7 +11,18 @@ import contigs2ORFs
 import contig2ViralFamily
 import contigs2count
 import contigs2topMatch
+import contigs2CDD
 
+def run_CDD(basename, ORF_file, ref_CDD_DB):
+    CDD_xml_file = basename + "_cdd.xml"
+    CDD_out_file = basename + "_cdd.txt"
+    print "Running CDD search:"
+    command = "rpsblast -query " + ORF_file + " -evalue 0.01 -seg no -outfmt 5 -db " + ref_CDD_DB + " -num_threads 4 -out " + CDD_xml_file
+    command2 = "rpsbproc -i " + CDD_xml_file + " -o " + CDD_out_file
+    subprocess.check_call(command, shell=True)
+    subprocess.check_call(command2, shell=True)
+    return(open(CDD_out_file, 'r'))
+        
 def run_glimmer(contig_file):
     print "Running Glimmer:"
     subprocess.check_call(["bash", "glimmer-wrapper.sh", contig_file.name])
@@ -36,14 +47,14 @@ def run_blastn_against_db(basename, name, contig_file, path):
     subprocess.check_call(command, shell=True)
     return(open(output_Blast_file, 'r'))
          
-def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh): 
-#    (c2length, c2readcount) = contigs2length.extract_name_length_readcount(contig_file_fh)
+def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh): 
     c2length=contigs2length.extract_name_length(contig_file_fh)
     c_circular = contigs2circular.extract_circularity(circle_file_fh)
     c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_fh)
     c2viralORFs = contigs2count.extract_counts(viralp_Blast_fh)
     c2familyName = contig2ViralFamily.extract_family_name(viralp_Blast_fh)
-
+    c2domains = contigs2CDD.extract_domain_counts(cdd_fh)
+    
     proteinDBmatches = {}
     for proteinDB_name, fh in  protein2fh.items():
         proteinDBmatches[proteinDB_name] = contigs2count.extract_counts(fh) 
@@ -51,11 +62,11 @@ def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blas
     nucleotideDBmatches = {}
     for nucleotideDB_name, fh in nucleotide2fh.items():
         nucleotideDBmatches[nucleotideDB_name] = contigs2topMatch.extract_match(fh)
-    return (annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, proteinDBmatches, nucleotideDBmatches)) 
+    return (annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, c2domains, proteinDBmatches, nucleotideDBmatches)) 
 
-def annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, proteinDBmatches, nucleotideDBmatches): 
+def annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, c2domains, proteinDBmatches, nucleotideDBmatches): 
     table = []
-    header = ["contig_name", "length", "circular", "nORFs", "nViralORFs", "family"]
+    header = ["contig_name", "length", "circular", "nORFs", "nViralORFs", "family", "nDomains"]
     header += proteinDBmatches.keys() + nucleotideDBmatches.keys()
     table.append(header)
     for contig, length in c2length.items():
@@ -75,9 +86,14 @@ def annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, pr
             Family = c2familyName[contig]
         else:
             Family = "NA"
+        if contig in c2domains:
+            num_domains = c2domains[contig]
+        else:
+            num_domains = 0
+
         protien_list = extract_blast_hits(contig, proteinDBmatches, 0)
         nuc_list = extract_blast_hits(contig, nucleotideDBmatches, "NA") 
-        row = [contig, length, circular, nORFs, nViralORFs, Family]
+        row = [contig, length, circular, nORFs, nViralORFs, Family, num_domains]
         row += protien_list + nuc_list
         table.append(row)
     return(table)
@@ -106,7 +122,8 @@ def parse_arguments():
                         help='Required input: location of db of viral family proteins.')
     parser.add_argument('-n' '--nucleotideDB', dest='ref_nucleotide_db', required=True, type=file,
                         help='Required input: comma delimited file of nucleotide reference db name and path.')
-
+    parser.add_argument('-c' '--CDD_DB', dest='ref_cdd_db', required=True, type=str, help='Required input: CDD database path.')
+    
     return(parser.parse_args())
 
 def run_circular(basename, contig_file):
@@ -146,6 +163,8 @@ if __name__ == '__main__':
 
         viralp_Blast_fh = run_blast_viraldb(basename, ORF_file, args.ref_viral)
 
+        cdd_fh = run_CDD(basename, ORF_file, args.ref_cdd_db)
+
         ref_protein_DBs = parse_db_paths(args.ref_protein_db)
         protein2fh = {}
         for name, path in ref_protein_DBs.items():
@@ -156,7 +175,7 @@ if __name__ == '__main__':
         for name, path in ref_nucleotide_DBs.items():
             nucleotide2fh[name] = run_blastn_against_db(basename, name, args.contigFile.name, path)
             
-        table = extract_annotations(args.contigFile, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh)
+        table = extract_annotations(args.contigFile, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh)
 
         if (args.outputFile): 
             output = open(args.outputFile, 'w')
