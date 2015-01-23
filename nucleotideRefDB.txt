@@ -1,3 +1,0 @@
-viral,/home/rohinis/viral_blastdb/viral.1.1.genomic.fna
-nt,/media/THING1/local/genomeIndexes/blast_nt/nt
-bacteria,/media/THING1/local/genomeIndexes/blast/BacterialGenomes/ncbi_bacteria.fa
