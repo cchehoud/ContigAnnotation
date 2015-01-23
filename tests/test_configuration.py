@@ -14,7 +14,7 @@ class Test_configuration(unittest.TestCase):
         self.assertEquals(self.configuration.ref_viral, ref_viral) 
 
     def test_ref_cdd(self):
-        cdd = '/media/THING1/dryga/PhageDynamics/CDD/cdd/little_endian' 
+        cdd = '/media/THING1/dryga/PhageDynamics/CDD/cdd/little_endian/Cdd' 
         rpsbproc_ini = './rpsbproc.ini'
         self.assertEquals(self.configuration.ref_cdd_db, cdd) 
         self.assertEquals(self.configuration.rpsbproc_ini, rpsbproc_ini) 
