@@ -37,7 +37,6 @@ def run_blastn_against_db(basename, name, contig_file, path):
     return(open(output_Blast_file, 'r'))
          
 def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh): 
-#    (c2length, c2readcount) = contigs2length.extract_name_length_readcount(contig_file_fh)
     c2length=contigs2length.extract_name_length(contig_file_fh)
     c_circular = contigs2circular.extract_circularity(circle_file_fh)
     c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_fh)
@@ -99,13 +98,8 @@ def parse_arguments():
                         help='Required input: contig file in fasta format.')
     parser.add_argument('-o', '--output_contig_annotation_table', dest='outputFile', required=False,
                         type=str, help='Optional output file name.')
-    parser.add_argument('-p' '--proteinDB', dest='ref_protein_db', required=True, type=file,
-                        help='Required input: comma delimited file of protein reference db name and path.')
-    parser.add_argument('-r', '--ref_viral_protein_DB', dest='ref_viral', required=True,
-                        type=str,
-                        help='Required input: location of db of viral family proteins.')
-    parser.add_argument('-n' '--nucleotideDB', dest='ref_nucleotide_db', required=True, type=file,
-                        help='Required input: comma delimited file of nucleotide reference db name and path.')
+    parser.add_argument('-d' '--databases', dest='databases', required=True, type=file,
+                        help='Required input: configuration file(INI) with reference names and paths.')
 
     return(parser.parse_args())
 
