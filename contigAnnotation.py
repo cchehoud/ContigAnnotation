@@ -12,13 +12,14 @@ import contig2ViralFamily
 import contigs2count
 import contigs2topMatch
 import contigs2CDD
+import configuration 
 
-def run_CDD(basename, ORF_file, ref_CDD_DB):
+def run_CDD(basename, ORF_file, ref_CDD_DB, rpsbproc_ini):
     CDD_xml_file = basename + "_cdd.xml"
     CDD_out_file = basename + "_cdd.txt"
     print "Running CDD search:"
     command = "rpsblast -query " + ORF_file + " -evalue 0.01 -seg no -outfmt 5 -db " + ref_CDD_DB + " -num_threads 4 -out " + CDD_xml_file
-    command2 = "rpsbproc -i " + CDD_xml_file + " -o " + CDD_out_file
+    command2 = "rpsbproc -i " + CDD_xml_file + " -o " + CDD_out_file + " -c " + rpsbproc_ini
     subprocess.check_call(command, shell=True)
     subprocess.check_call(command2, shell=True)
     return(open(CDD_out_file, 'r'))
@@ -115,7 +116,7 @@ def parse_arguments():
                         help='Required input: contig file in fasta format.')
     parser.add_argument('-o', '--output_contig_annotation_table', dest='outputFile', required=False,
                         type=str, help='Optional output file name.')
-    parser.add_argument('-d' '--databases', dest='databases', required=True, type=file,
+    parser.add_argument('-d' '--databases', dest='databases', required=True, type=str,
                         help='Required input: configuration file(INI) with reference names and paths.')
     return(parser.parse_args())
 
@@ -130,14 +131,6 @@ def run_circular(basename, contig_file):
     circle_fh.close()
     circle_fh = open(circle_file, 'r')
     return(circle_fh)
-
-def parse_db_paths(db_list):
-    name2path = {}
-    for line in db_list:
-        values = line.split(",")
-        path = values[1].rstrip()
-        name2path[values[0]] = path
-    return(name2path)
                     
 if __name__ == '__main__':
         '''
@@ -145,6 +138,7 @@ if __name__ == '__main__':
         '''
 
         args = parse_arguments()
+        configuration = configuration.Configuration(args.databases)
         
         basename = os.path.splitext(args.contigFile.name)[0]        
         circle_fh = run_circular(basename, args.contigFile)
@@ -154,18 +148,18 @@ if __name__ == '__main__':
         ORF_file = basename + ".fastp"
         ORF_file_fh = open(ORF_file, 'r')
 
-        viralp_Blast_fh = run_blast_viraldb(basename, ORF_file, args.ref_viral)
+        viralp_Blast_fh = run_blast_viraldb(basename, ORF_file, configuration.ref_viral)
 
-        cdd_fh = run_CDD(basename, ORF_file, args.ref_cdd_db)
+        cdd_fh = run_CDD(basename, ORF_file, configuration.ref_cdd_db, configuration.rpsbproc_ini)
 
-        ref_protein_DBs = parse_db_paths(args.ref_protein_db)
+        ref_protein_DBs = configuration.ref_protein_db
         protein2fh = {}
-        for name, path in ref_protein_DBs.items():
+        for (name, path) in ref_protein_DBs:
             protein2fh[name] = run_blastp_against_db(basename, name, ORF_file, path)
 
         nucleotide2fh = {}
-        ref_nucleotide_DBs = parse_db_paths(args.ref_nucleotide_db)    
-        for name, path in ref_nucleotide_DBs.items():
+        ref_nucleotide_DBs = configuration.ref_nucleotide_db    
+        for name, path in ref_nucleotide_DBs:
             nucleotide2fh[name] = run_blastn_against_db(basename, name, args.contigFile.name, path)
             
         table = extract_annotations(args.contigFile, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh)
