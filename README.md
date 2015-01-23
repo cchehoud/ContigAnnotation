@@ -3,33 +3,58 @@
 For each nucleotide sequence collects annotation by searching nucleotide, protein and conserved domain
 databases. Each nucleotide sequence translated to protein sequence after ORFs are predicted.
 
-
 Here is example command to run the script:
 
 ```bash
-python contigAnnotation.py -i ex_contig.fa -o ex_contig_annotation.dat -p proteinRefDB.txt\ 
--n nucleotideRefDB.txt -r /media/THING1/sminot/timecourse/4AnnotateContigs/4.12TaxonomicFamily/4.12.1ViralFamilyProteinsDB/\
--c /media/THING1/dryga/PhageDynamics/CDD/cdd/little_endian 
+python contigAnnotation.py -i ex_contig.fa -o ex_contig_annotation.dat -d databases.ini
 ```
-
-The command-line options are not stable and could be changed.
 
 ## Input 
 
 Input files for the script are:
 * fasta (nucleotide) file with contigs
-* file with paths to blastp protein databases
-* blastp protein databases 
-* file with paths to blastn nucleotide databases
-* blastn nucleotide databases
-* file with protein databases for viral families
+* configuration file with paths to databases
 
-Format for files with blast DBs, both (protein and nucleotide) are
-tab-delimited with 2 columns: name of the database and path to it.
-See example files in proteinRefDB.txt and nucleotideRefDB.txt.
+Configuration file Format:
 
-CDD utility needs file `rpsbproc.ini`, which should be located in the current directory and point to
-correct location, where CDD files can be found.
+```ini
+[Taxonomy]
+
+viral_protein = /media/THING1/sminot/timecourse/4AnnotateContigs/4.12TaxonomicFamily/4.12.1ViralFamilyProteinsDB/
+
+[CDD]
+cdd = /media/THING1/dryga/PhageDynamics/CDD/cdd/little_endian 
+rpsbproc_ini = ./rpsbproc.ini
+
+[ProteinDB]
+
+integrase = /media/THING1/local/genomeIndexes/blast/UniprotPhageIntegrase.fasta
+aclame = /media/THING1/local/genomeIndexes/blast/ACLAME/aclame_proteins_viruses_prophages_0.4.fasta
+vfdb = /media/THING1/local/genomeIndexes/blast/VFDB/VFs.faa
+
+[NucleotideDB]
+
+viral = /home/rohinis/viral_blastdb/viral.1.1.genomic.fna
+nt = /media/THING1/local/genomeIndexes/blast_nt/nt
+bacteria = /media/THING1/local/genomeIndexes/blast/BacterialGenomes/ncbi_bacteria.fa
+
+```
+
+Config file has 4 sections: Taxonomy, CDD, ProteinDB, NucleotideDB.
+
+Taxonomy section has only one key/value pair, key should be `viral\_protein`
+and value is path to blastp protein database for viral family.
+
+CDD section has 2 key/value pairs, 1st key is `cdd` and value is path to CDD database,
+2nd key is `rpsbproc\_ini` and value is path to init file required for rpsbproc utility. 
+
+ProteinDB section has arbitrary number of key/value pairs, each key is name of
+protein blast db and value is path to the DB.
+
+NucleotideDB section has arbitrary number of key/value pairs, each key is name of
+nucleotide blast db and value is path to the DB.
+
+CDD utility needs file `rpsbproc.ini`.
 
 ## Output
 
@@ -58,5 +83,5 @@ Script uses several programs and databases to add annotation to sequences.
 ### Databases
 
 Blast databases are required for annotating sequences with blast hits.
-CDD database and additional files reqauired by `rpsbproc.ini`
+CDD database and additional files required by `rpsbproc.ini`
 
