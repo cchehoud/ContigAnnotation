@@ -44,7 +44,7 @@ def run_blastp_against_db(basename, name, ORF_file, path):
 def run_blastn_against_db(basename, name, contig_file, path):
     output_Blast_file = basename + "_" + name + "_blastout.txt"
     print "Running BLAST on " + name + " db:"
-    command = "blastn -query " + contig_file + " -db " + path + " -outfmt '6 qseqid stitle' -num_threads 4 -evalue 1e-10 -max_target_seqs 1 -out " + output_Blast_file
+    command = "blastn -query " + contig_file + " -db " + path + " -outfmt '6 qseqid stitle sseqid' -num_threads 4 -evalue 1e-10 -max_target_seqs 1 -out " + output_Blast_file
     subprocess.check_call(command, shell=True)
     return(open(output_Blast_file, 'r'))
          
