@@ -3,6 +3,8 @@
 import argparse
 
 def extract_domain_counts (filein):
+    if filein is None:
+        return {}
     filein.seek(0)
     contigs_2_domain_count = {}
     for line in filein:

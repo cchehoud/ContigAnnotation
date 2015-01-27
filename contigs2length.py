@@ -13,6 +13,8 @@ def extract_name_length(filein):
         Raises:
             ValueError if ID has been already seen
     """
+    if filein is None:
+        return {}
     contigs2length = {}
     filein.seek(0)
     for record in SeqIO.parse(filein, "fasta"):

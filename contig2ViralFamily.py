@@ -3,6 +3,8 @@
 import argparse
 
 def extract_family_name (filein):
+    if filein is None:
+        return {}
     filein.seek(0)
     contigs2familyName = {}
     for line in filein:

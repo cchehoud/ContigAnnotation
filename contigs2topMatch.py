@@ -3,6 +3,8 @@
 import argparse
 
 def extract_match (filein):
+    if filein is None:
+        return {}
     filein.seek(0)
     contigs2match = {}
     for line in filein:

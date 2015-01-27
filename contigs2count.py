@@ -3,6 +3,8 @@
 import argparse
 
 def extract_counts (filein):
+    if filein is None:
+        return {}
     filein.seek(0)
     contigs2count = {}
     contig_orfnames = set()
