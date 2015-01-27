@@ -4,6 +4,8 @@ import sys
 import argparse
 import subprocess
 import os
+import shutil
+
 import circular
 import contigs2length
 import contigs2circular
@@ -16,40 +18,92 @@ import configuration
 
 def run_CDD(basename, ORF_file, ref_CDD_DB, rpsbproc_ini):
     CDD_xml_file = basename + "_cdd.xml"
-    CDD_out_file = basename + "_cdd.txt"
     print "Running CDD search:"
     command = "rpsblast -query " + ORF_file + " -evalue 0.01 -seg no -outfmt 5 -db " + ref_CDD_DB + " -num_threads 4 -out " + CDD_xml_file
-    command2 = "rpsbproc -i " + CDD_xml_file + " -o " + CDD_out_file + " -c " + rpsbproc_ini
-    subprocess.check_call(command, shell=True)
-    subprocess.check_call(command2, shell=True)
-    return(open(CDD_out_file, 'r'))
+    try:
+        subprocess.check_call(command, shell=True)
+    except subprocess.CalledProcessError:
+        print "CDD annotation(rpsblast) does not return any hits."
+        return None
+    run_rpsbproc(CDD_xml_file, rpsbproc_ini)
+
+def run_rpsbproc(CDD_xml_file, rpsbproc_ini):
+    """ run utility for blast output postprocesing.
+       
+        Temporary workaround for cmd-line processing of rpsbproc:
+        input file and output file are in the current directory. 
+    """
+    current_path = os.getcwd()
+    try:
+        (path_to_cdd, filename_extension) = os.path.split(CDD_xml_file)
+        CDD_xml_file = filename_extension
+        CDD_out_file = os.path.splitext(filename_extension)[0] + ".txt" 
+        (rpsbproc_ini_path, rpsbproc_ini_filename) =  os.path.split(rpsbproc_ini)
+        command2 = "rpsbproc -i " + CDD_xml_file + " -o " + CDD_out_file + " -c " + rpsbproc_ini_filename
+        try:
+            rpsbproc_copy_to = os.path.join(path_to_cdd, rpsbproc_ini_filename)
+            shutil.copyfile(rpsbproc_ini, rpsbproc_copy_to)
+        except shutil.Error:
+            # if cannot copy file it is in the same folder already
+            pass
+        if path_to_cdd != '': # empty when current file is in current dir and only name of the file is given
+            os.chdir(path_to_cdd) 
+        subprocess.check_call(command2, shell=True)
+        return open(CDD_out_file, 'r')
+    except subprocess.CalledProcessError:
+        print "CDD annotation(rpsbproc) does not extract any CDD domains."
+        return None
+    finally:
+        os.chdir(current_path)
+        
         
 def run_glimmer(contig_file):
+    """ run ORF finder and creates file with predicted protein seq.
+
+        Return: True if success
+                False if cannot run glimmer of get protein seqs.
+    """
     print "Running Glimmer:"
-    subprocess.check_call(["bash", "glimmer-wrapper.sh", contig_file.name])
+    try:
+        subprocess.check_call(["bash", "glimmer-wrapper.sh", contig_file.name])
+        return True
+    except subprocess.CalledProcessError:
+        return False
  
 def run_blast_viraldb(basename, ORF_file, ref_viralDB):
     viralp_Blast_file = basename + "_viralp_blastout.txt"
     print "Running BLAST on viral proteins db:"
-    subprocess.check_call(["bash", "blast.viral.families.sh", ORF_file, viralp_Blast_file, ref_viralDB])
-    return(open(viralp_Blast_file, 'r'))
+    try:
+        subprocess.check_call(["bash", "blast.viral.families.sh", ORF_file, viralp_Blast_file, ref_viralDB])
+        return open(viralp_Blast_file, 'r')
+    except subprocess.CalledProcessError:
+        print "blast against viral families does not retunr any hits."
+        return None
     
 def run_blastp_against_db(basename, name, ORF_file, path):
     output_Blast_file = basename + "_" + name + "_blastout.txt"
     print "Running BLAST on " + name + " db:"
     command = "blastp -query " + ORF_file + " -db " + path + " -outfmt '6 qseqid' -evalue 1e-10 -num_threads 4 -max_target_seqs 1 -out " + output_Blast_file
-    subprocess.check_call(command, shell=True)
-    return(open(output_Blast_file, 'r'))
+    try:
+        subprocess.check_call(command, shell=True)
+        return open(output_Blast_file, 'r')
+    except subprocess.CalledProcessError:
+        print "Protein BLAST(blastp) failed for DB: " + path
+        return None
     
 def run_blastn_against_db(basename, name, contig_file, path):
     output_Blast_file = basename + "_" + name + "_blastout.txt"
     print "Running BLAST on " + name + " db:"
     command = "blastn -query " + contig_file + " -db " + path + " -outfmt '6 qseqid stitle sseqid' -num_threads 4 -evalue 1e-10 -max_target_seqs 1 -out " + output_Blast_file
-    subprocess.check_call(command, shell=True)
-    return(open(output_Blast_file, 'r'))
+    try:
+        subprocess.check_call(command, shell=True)
+        return open(output_Blast_file, 'r')
+    except subprocess.CalledProcessError:
+        print "Nucleotide BLAST(blastn) failed for DB: " + path
+        return None
          
 def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh): 
-    c2length=contigs2length.extract_name_length(contig_file_fh)
+    c2length = contigs2length.extract_name_length(contig_file_fh)
     c_circular = contigs2circular.extract_circularity(circle_file_fh)
     c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_fh)
     c2viralORFs = contigs2count.extract_counts(viralp_Blast_fh)
@@ -131,6 +185,20 @@ def run_circular(basename, contig_file):
     circle_fh.close()
     circle_fh = open(circle_file, 'r')
     return(circle_fh)
+
+def run_protein_searches(basename, configuration):
+        ORF_file = basename + ".fastp"
+        ORF_file_fh = open(ORF_file, 'r')
+
+        viralp_Blast_fh = run_blast_viraldb(basename, ORF_file, configuration.ref_viral)
+
+        cdd_fh = run_CDD(basename, ORF_file, configuration.ref_cdd_db, configuration.rpsbproc_ini)
+
+        protein2fh = {}
+        for (name, path) in configuration.ref_protein_db:
+            protein2fh[name] = run_blastp_against_db(basename, name, ORF_file, path)
+        return (ORF_file_fh, viralp_Blast_fh, protein2fh, cdd_fh)
+    
                     
 if __name__ == '__main__':
         '''
@@ -143,26 +211,24 @@ if __name__ == '__main__':
         basename = os.path.splitext(args.contigFile.name)[0]        
         circle_fh = run_circular(basename, args.contigFile)
 
-        run_glimmer(args.contigFile)
-        
-        ORF_file = basename + ".fastp"
-        ORF_file_fh = open(ORF_file, 'r')
-
-        viralp_Blast_fh = run_blast_viraldb(basename, ORF_file, configuration.ref_viral)
-
-        cdd_fh = run_CDD(basename, ORF_file, configuration.ref_cdd_db, configuration.rpsbproc_ini)
-
-        ref_protein_DBs = configuration.ref_protein_db
+        is_protein_seq_created = run_glimmer(args.contigFile)
+        ORF_file_fh = None
+        viralp_Blast_fh = None
         protein2fh = {}
-        for (name, path) in ref_protein_DBs:
-            protein2fh[name] = run_blastp_against_db(basename, name, ORF_file, path)
+        cdd_fh = None
+        if not is_protein_seq_created:
+            print "Glimmer FAILED: all searches based on protein seq will be SKIPPED."
+        else:
+            print "Glimmer succeed: all searches based on protein seq will be RUN."
+            (ORF_file_fh, viralp_Blast_fh, protein2fh, cdd_fh) =  run_protein_searches(basename, configuration)
 
         nucleotide2fh = {}
         ref_nucleotide_DBs = configuration.ref_nucleotide_db    
         for name, path in ref_nucleotide_DBs:
             nucleotide2fh[name] = run_blastn_against_db(basename, name, args.contigFile.name, path)
             
-        table = extract_annotations(args.contigFile, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh)
+        table = extract_annotations(
+            args.contigFile, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh)
 
         if (args.outputFile): 
             output = open(args.outputFile, 'w')
@@ -172,3 +238,4 @@ if __name__ == '__main__':
         for line in table:
             output.write('\t'.join(map(str, line)))
             output.write('\n')
+
