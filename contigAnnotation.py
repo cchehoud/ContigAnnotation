@@ -15,6 +15,7 @@ import contigs2count
 import contigs2topMatch
 import contigs2CDD
 import configuration 
+import fasta_filter
 
 def run_CDD(basename, ORF_file, ref_CDD_DB, rpsbproc_ini):
     CDD_xml_file = basename + "_cdd.xml"
@@ -65,7 +66,7 @@ def run_glimmer(contig_file):
     """
     print "Running Glimmer:"
     try:
-        subprocess.check_call(["bash", "glimmer-wrapper.sh", contig_file.name])
+        subprocess.check_call(["bash", "glimmer-wrapper.sh", contig_file])
         return True
     except subprocess.CalledProcessError:
         return False
@@ -102,7 +103,8 @@ def run_blastn_against_db(basename, name, contig_file, path):
         print "Nucleotide BLAST(blastn) failed for DB: " + path
         return None
          
-def extract_annotations(contig_file_fh, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh): 
+def extract_annotations(contig_file, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh): 
+    contig_file_fh = open(contig_file)
     c2length = contigs2length.extract_name_length(contig_file_fh)
     c_circular = contigs2circular.extract_circularity(circle_file_fh)
     c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_fh)
@@ -172,6 +174,8 @@ def parse_arguments():
                         type=str, help='Optional output file name.')
     parser.add_argument('-d' '--databases', dest='databases', required=True, type=str,
                         help='Required input: configuration file(INI) with reference names and paths.')
+    parser.add_argument('-l' '--min_length', dest='contig_min_length', required=False, type=int,
+                        help='only contigs >= given length are annotated.')
     return(parser.parse_args())
 
 def run_circular(basename, contig_file):
@@ -181,7 +185,7 @@ def run_circular(basename, contig_file):
     kMerMin = 10
     kMerMax = 1000
     min_len = 3500
-    circular.find_circular_by_kmer(contig_file, circle_fh, kMerMin, kMerMax, min_len)
+    circular.find_circular_by_kmer(open(contig_file), circle_fh, kMerMin, kMerMax, min_len)
     circle_fh.close()
     circle_fh = open(circle_file, 'r')
     return(circle_fh)
@@ -198,6 +202,24 @@ def run_protein_searches(basename, configuration):
         for (name, path) in configuration.ref_protein_db:
             protein2fh[name] = run_blastp_against_db(basename, name, ORF_file, path)
         return (ORF_file_fh, viralp_Blast_fh, protein2fh, cdd_fh)
+
+def filter_contigs(contig_file, min_length):
+    """ created file and names for filtered contig
+
+        Exit if none of the contigs survive filtering.
+    
+        Return:
+            (basename, contig_name)
+    """
+    basename_original = os.path.splitext(contig_file)[0]        
+    basename_filtered = basename_original + "_min_len_" + str(min_length)
+    contigs_filtered = basename_filtered + ".fasta"
+    num_reads = fasta_filter.seq_length_greater(contig_file, contigs_filtered, min_length)
+    if num_reads == 0:
+        print "All of the contigs are smaller than " + str(min_length) + " nucleotide."
+        print "NOTHING is going to be annotated. (Decrease length or drop the argument for annotation.)"
+        sys.exit(0)
+    return (basename_filtered, contigs_filtered)
     
                     
 if __name__ == '__main__':
@@ -208,10 +230,15 @@ if __name__ == '__main__':
         args = parse_arguments()
         configuration = configuration.Configuration(args.databases)
         
-        basename = os.path.splitext(args.contigFile.name)[0]        
-        circle_fh = run_circular(basename, args.contigFile)
+        if args.contig_min_length:
+            (basename, contigs) = filter_contigs(args.contigFile.name, args.contig_min_length)
+        else:
+            contigs = args.contigFile.name
+            basename = os.path.splitext(contigs)[0]        
 
-        is_protein_seq_created = run_glimmer(args.contigFile)
+        circle_fh = run_circular(basename, contigs)
+
+        is_protein_seq_created = run_glimmer(contigs)
         ORF_file_fh = None
         viralp_Blast_fh = None
         protein2fh = {}
@@ -225,10 +252,10 @@ if __name__ == '__main__':
         nucleotide2fh = {}
         ref_nucleotide_DBs = configuration.ref_nucleotide_db    
         for name, path in ref_nucleotide_DBs:
-            nucleotide2fh[name] = run_blastn_against_db(basename, name, args.contigFile.name, path)
+            nucleotide2fh[name] = run_blastn_against_db(basename, name, contigs, path)
             
         table = extract_annotations(
-            args.contigFile, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh)
+            contigs, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh)
 
         if (args.outputFile): 
             output = open(args.outputFile, 'w')
