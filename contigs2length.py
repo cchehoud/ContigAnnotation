@@ -9,6 +9,9 @@ def extract_name_length(filein):
     """ length on seq.
 
         creates a map: key is read/seq id, value is number of nucleotides(length)
+        
+        Input:
+            filehandle to fasta file
 
         Raises:
             ValueError if ID has been already seen
