@@ -24,8 +24,8 @@ def extract_family_name (filein):
 def best_family_name (contigs2familyName):
     contigs2bestFamilyName = {}
     for contig, map_of_names in contigs2familyName.items():
-         highest_name = ""
-         highest_count = 0
+         highest_name = "NA"
+         highest_count = 2
          for name, counts in map_of_names.items():
              if (counts > highest_count):
                  highest_name = name
