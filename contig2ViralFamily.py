@@ -25,7 +25,7 @@ def best_family_name (contigs2familyName):
     contigs2bestFamilyName = {}
     for contig, map_of_names in contigs2familyName.items():
          highest_name = "NA"
-         highest_count = 2
+         highest_count = 1
          for name, counts in map_of_names.items():
              if (counts > highest_count):
                  highest_name = name
