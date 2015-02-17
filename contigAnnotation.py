@@ -16,6 +16,7 @@ import contigs2topMatch
 import contigs2CDD
 import configuration 
 import fasta_filter
+import viral_host
 
 def run_CDD(basename, ORF_file, ref_CDD_DB, rpsbproc_ini):
     CDD_xml_file = basename + "_cdd.xml"
@@ -124,7 +125,7 @@ def extract_annotations(contig_file, circle_file_fh, orf_file_fh, viralp_Blast_f
 def annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, c2domains, proteinDBmatches, nucleotideDBmatches): 
     table = []
     header = ["contig_name", "length", "circular", "nORFs", "nViralORFs", "family", "nDomains"]
-    header += proteinDBmatches.keys() + nucleotideDBmatches.keys()
+    header += proteinDBmatches.keys() + nucleotideDBmatches.keys() + ["host"]
     table.append(header)
     for contig, length in c2length.items():
         if contig in c_circular:
@@ -149,9 +150,10 @@ def annotation_table(c2length, c_circular, c2ORFs, c2viralORFs, c2familyName, c2
             num_domains = 0
 
         protien_list = extract_blast_hits(contig, proteinDBmatches, 0)
-        nuc_list = extract_blast_hits(contig, nucleotideDBmatches, "NA") 
+        nuc_list = extract_blast_hits(contig, nucleotideDBmatches, "NA")
+        host = viral_host.extract_putative_host(nucleotideDBmatches.keys(), nuc_list)
         row = [contig, length, circular, nORFs, nViralORFs, Family, num_domains]
-        row += protien_list + nuc_list
+        row += protien_list + nuc_list + [host]
         table.append(row)
     return(table)
 
