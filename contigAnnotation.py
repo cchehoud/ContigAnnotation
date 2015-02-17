@@ -196,7 +196,12 @@ def run_protein_searches(basename, configuration):
 
         viralp_Blast_fh = run_blast_viraldb(basename, ORF_file, configuration.ref_viral)
 
-        cdd_fh = run_CDD(basename, ORF_file, configuration.ref_cdd_db, configuration.rpsbproc_ini)
+        cdd_fh = None
+        if configuration.skip:
+            print "CDD searches will NOT be done."
+        else:
+            print "CDD searches will be done."
+            cdd_fh = run_CDD(basename, ORF_file, configuration.ref_cdd_db, configuration.rpsbproc_ini)
 
         protein2fh = {}
         for (name, path) in configuration.ref_protein_db:

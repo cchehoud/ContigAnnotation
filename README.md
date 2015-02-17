@@ -23,6 +23,7 @@ Configuration file in INI Format:
 viral_protein = /media/THING1/sminot/timecourse/4AnnotateContigs/4.12TaxonomicFamily/4.12.1ViralFamilyProteinsDB/
 
 [CDD]
+skip=TRUE
 cdd = /media/THING1/dryga/PhageDynamics/CDD/cdd/little_endian 
 rpsbproc_ini = ./rpsbproc.ini
 
@@ -42,8 +43,17 @@ Configuration file has 4 sections: Taxonomy, CDD, ProteinDB, NucleotideDB.
 Taxonomy section has only one key/value pair, key should be `viral\_protein`
 and value is path to blastp protein database for viral family.
 
-CDD section has 2 key/value pairs, 1st key is `cdd` and value is path to CDD database,
+CDD section has 3 key/value pairs, 1st key is `cdd` and value is path to CDD database,
 2nd key is `rpsbproc\_ini` and value is path to init file required for rpsbproc utility. 
+CDD searches can be disabled to save running time:
+```
+skip=TRUE 
+```
+to actually run CDD use:
+```
+skip=FALSE 
+```
+
 
 ProteinDB section has arbitrary number of key/value pairs, each key is name of
 protein blast db and value is path to the DB.
