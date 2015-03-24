@@ -105,15 +105,15 @@ def run_blastn_against_db(basename, name, contig_file, path):
         return None
          
 def extract_annotations(basename, contig_file, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh): 
-    print cdd_fh
     contig_file_fh = open(contig_file)
     contig_cdd_accession = basename + "_cdd_accession.tsv"
+    print "contig cdd_id table will be written to : " + contig_cdd_accession
     c2length = contigs2length.extract_name_length(contig_file_fh)
     c_circular = contigs2circular.extract_circularity(circle_file_fh)
     c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_fh)
     c2viralORFs = contigs2count.extract_counts(viralp_Blast_fh)
     c2familyName = contig2ViralFamily.extract_family_name(viralp_Blast_fh)
-    c2domains = contigs2CDD.extract_domain_counts(cdd_fh, open(contig_cdd_accession))
+    c2domains = contigs2CDD.extract_domain_counts(cdd_fh, open(contig_cdd_accession, 'w'))
     
     proteinDBmatches = {}
     for proteinDB_name, fh in  protein2fh.items():
@@ -206,7 +206,6 @@ def run_protein_searches(basename, configuration):
         else:
             print "CDD searches will be done."
             cdd_fh = run_CDD(basename, ORF_file, configuration.ref_cdd_db, configuration.rpsbproc_ini)
-        print 'from main ' + str(cdd_fh)
 
         protein2fh = {}
         for (name, path) in configuration.ref_protein_db:

@@ -1,0 +1,64 @@
+#Post-RPSBLAST Processing Utility v0.1
+#Config file:	rpsbproc.ini
+#Input data file:	ex_contig_cdd.xml
+#Output data file:	ex_contig_cdd.txt
+#E-Value cutoff:	0.01
+#Redundancy:	Concise
+#Data requested:	Domain hits and site annotations
+#Output format -- tab-delimited table
+#DATA
+#SESSION	<session-ordinal>	<program>	<database>	<score-matrix>	<evalue-threshold>
+#QUERY	<query-id>	<seq-type>	<seq-length>	<definition-line>
+#DOMAINS
+#<session-ordinal>	<query-id[readingframe]>	<hit-type>	<PSSM-ID>	<from>	<to>	<E-Value>	<bitscore>	<accession>	<short-name>	<incomplete>	<superfamily PSSM-ID>
+#more such lines......
+#ENDDOMAINS
+#SITES
+#<session-ordinal>	<query-id[readingframe]>	<annot-type>	<title>	<residue(coordinates)>	<complete-size>	<mapped-size>	<source-domain>
+#more such lines......
+#ENDSITES
+#MOTIFS
+#<session-ordinal>	<query-id[readingframe]>	<title>	<from>	<to>	<source-domain>
+#more such lines......
+#ENDMOTIFS
+#ENDQUERY	<query-id>
+#more query sections..
+#ENDSESSION	<session-ordinal>
+#more session sections..
+#ENDDATA
+#=====================================================================
+DATA
+SESSION	1	RPSBLAST 2.2.29+	/media/THING1/dryga/PhageDynamics/CDD/cdd/little_endian/Cdd	BLOSUM62	0.01
+QUERY	Query_1	Peptide	117	contig-95_2.orf00040
+DOMAINS
+1	Query_1	Non-specific	251642	22	77	0.000161815	39.1711	pfam02956	TT_ORF1	C	45
+ENDDOMAINS
+ENDQUERY
+QUERY	Query_2	Peptide	53	contig-NO-HITS
+ENDQUERY
+QUERY	Query_3	Peptide	644	contig-95_2.orf00057
+DOMAINS
+1	Query_3	Specific	255789	47	241	2.64177e-16	78.8636	pfam10145	PhageMin_Tail	-	276374
+1	Query_3	Multidom	227605	2	532	1.75107e-16	82.9625	COG5280	COG5280	-	45
+ENDDOMAINS
+ENDQUERY
+QUERY	Query_57	Peptide	318	contig-95_4.orf00021
+DOMAINS
+1	Query_57	Specific	226031	18	173	2.34708e-10	60.5261	COG3500	COG3500	C	265786
+ENDDOMAINS
+ENDQUERY
+QUERY	Query_58	Peptide	1104	contig-95_4.orf00020
+DOMAINS
+1	Query_58	Specific	255789	268	460	1.06711e-13	71.93	pfam10145	PhageMin_Tail	-	276374
+1	Query_58	Superfamily	275592	644	893	0.000297898	44.1645	cl00465	UPF0118	C	-
+ENDDOMAINS
+ENDQUERY
+QUERY	Query_66	Peptide	292	contig-95_4.orf00001
+DOMAINS
+1	Query_66	Superfamily	276271	69	165	0.0002808	41.3293	cl19582	FGE-sulfatase	NC	-
+ENDDOMAINS
+ENDQUERY
+ENDSESSION	1
+ENDDATA
+
+#Total Blastout object processed	1
