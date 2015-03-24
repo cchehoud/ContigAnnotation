@@ -2,9 +2,7 @@ import ConfigParser
 import sys
 
 class Configuration:
-    """ reads ini file and parses it 
-        
-    """
+    """ reads ini file and parses it."""
 
     def __init__(self, configurationFile):
         config = ConfigParser.ConfigParser()
