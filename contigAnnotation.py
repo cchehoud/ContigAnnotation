@@ -27,7 +27,7 @@ def run_CDD(basename, ORF_file, ref_CDD_DB, rpsbproc_ini):
     except subprocess.CalledProcessError:
         print "CDD annotation(rpsblast) does not return any hits."
         return None
-    run_rpsbproc(CDD_xml_file, rpsbproc_ini)
+    return run_rpsbproc(CDD_xml_file, rpsbproc_ini)
 
 def run_rpsbproc(CDD_xml_file, rpsbproc_ini):
     """ run utility for blast output postprocesing.
@@ -79,7 +79,7 @@ def run_blast_viraldb(basename, ORF_file, ref_viralDB):
         subprocess.check_call(["bash", "blast.viral.families.sh", ORF_file, viralp_Blast_file, ref_viralDB])
         return open(viralp_Blast_file, 'r')
     except subprocess.CalledProcessError:
-        print "blast against viral families does not retunr any hits."
+        print "blast against viral families does not return any hits."
         return None
     
 def run_blastp_against_db(basename, name, ORF_file, path):
@@ -104,14 +104,16 @@ def run_blastn_against_db(basename, name, contig_file, path):
         print "Nucleotide BLAST(blastn) failed for DB: " + path
         return None
          
-def extract_annotations(contig_file, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh): 
+def extract_annotations(basename, contig_file, circle_file_fh, orf_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh): 
+    print cdd_fh
     contig_file_fh = open(contig_file)
+    contig_cdd_accession = basename + "_cdd_accession.tsv"
     c2length = contigs2length.extract_name_length(contig_file_fh)
     c_circular = contigs2circular.extract_circularity(circle_file_fh)
     c2ORFs = contigs2ORFs.extract_ORF_counts(orf_file_fh)
     c2viralORFs = contigs2count.extract_counts(viralp_Blast_fh)
     c2familyName = contig2ViralFamily.extract_family_name(viralp_Blast_fh)
-    c2domains = contigs2CDD.extract_domain_counts(cdd_fh)
+    c2domains = contigs2CDD.extract_domain_counts(cdd_fh, open(contig_cdd_accession))
     
     proteinDBmatches = {}
     for proteinDB_name, fh in  protein2fh.items():
@@ -199,11 +201,12 @@ def run_protein_searches(basename, configuration):
         viralp_Blast_fh = run_blast_viraldb(basename, ORF_file, configuration.ref_viral)
 
         cdd_fh = None
-        if configuration.skip:
+        if configuration.skip_cdd:
             print "CDD searches will NOT be done."
         else:
             print "CDD searches will be done."
             cdd_fh = run_CDD(basename, ORF_file, configuration.ref_cdd_db, configuration.rpsbproc_ini)
+        print 'from main ' + str(cdd_fh)
 
         protein2fh = {}
         for (name, path) in configuration.ref_protein_db:
@@ -262,7 +265,7 @@ if __name__ == '__main__':
             nucleotide2fh[name] = run_blastn_against_db(basename, name, contigs, path)
             
         table = extract_annotations(
-            contigs, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh)
+            basename, contigs, circle_fh, ORF_file_fh, viralp_Blast_fh, protein2fh, nucleotide2fh, cdd_fh)
 
         if (args.outputFile): 
             output = open(args.outputFile, 'w')

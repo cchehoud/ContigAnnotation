@@ -2,7 +2,11 @@
 
 import argparse
 
-def extract_domain_counts (filein):
+def extract_domain_counts(filein, contig_cdd_accession_fh):
+    """ extract counts and save contig-cdd_id table into file.
+    """
+    print "RUNNING extract_domain_counts"
+    print filein
     if filein is None:
         return {}
     filein.seek(0)
@@ -21,6 +25,7 @@ def extract_domain_counts (filein):
                 contigs_2_domain_count[contig]+= count
             else:
                 contigs_2_domain_count[contig] = count
+    print contigs_2_domain_count
     return(contigs_2_domain_count)
 
 def extract_contig_name(line):
@@ -39,7 +44,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print "Extracting information from rpsbproc file:"
-    contigs2domaincount = extract_domain_counts(args.rpsbprocFile)
+    contigs2domaincount = extract_domain_counts(args.rpsbprocFile, open("contig_cdd_accession.tsv"))
 
     print "ContigName\tNumberofDomains"
     for contig, nDomains in contigs2domaincount.items():
