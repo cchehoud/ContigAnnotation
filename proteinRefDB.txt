@@ -1,3 +1,0 @@
-integrase,/media/THING1/local/genomeIndexes/blast/UniprotPhageIntegrase.fasta
-aclame,/media/THING1/local/genomeIndexes/blast/ACLAME/aclame_proteins_viruses_prophages_0.4.fasta
-vfdb,/media/THING1/local/genomeIndexes/blast/VFDB/VFs.faa
